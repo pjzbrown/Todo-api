@@ -64,7 +64,11 @@ app.post('/todos', middleware.requireAuthentication, function(req, res) {
 	body = _.pick(body, 'description', 'completed');
 
 	db.todo.create(body).then(function (todo) {
-		res.json(todo.toJSON());
+		req.user.addTodo(todo).then(function () {
+			return todo.reload();
+		}).then(function(user) {
+			res.json(todo.toJSON());
+		});		
 	}).catch(function(e) {
 		res.status(400).json(e);
 	});
@@ -153,7 +157,7 @@ app.post('/users/login', function(req, res) {
 });
 
 // sync database and launch app
-db.sequelize.sync().then(function () {
+db.sequelize.sync({force:true}).then(function () {
 	app.listen(PORT, function() {
 		console.log('Express listening on port ' + PORT + '!');
 	})
